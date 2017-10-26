@@ -39,7 +39,7 @@ if sys.version_info < (3, 4, 1):
 
 
 setup(name='pygfolder',
-      version='0.0.1',
+      version='0.0.2',
       description='PyGFolder is a package for managing Google Drive folders as a dictionary.',
       long_description=readme(),
       url='http://github.com/ipazc/pygfolder',
@@ -48,6 +48,8 @@ setup(name='pygfolder',
       license='MIT',
       packages=setuptools.find_packages(),
       install_requires=[
+          "requests",
+          "oauthlib"
       ],
       classifiers=[
           'Environment :: Console',

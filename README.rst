@@ -1,5 +1,5 @@
 ==============
-pygfpñder 0.0.1
+pygfpñder 0.0.2
 ==============
 
 `PyGFolder` is a package for managing the Google Drive as a dictionary, with the same interface as PyFolder.
