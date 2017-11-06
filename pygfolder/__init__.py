@@ -217,7 +217,8 @@ class PyGFolder(object):
         return result, response.status_code, self.__refresh_token
 
     @retry
-    def __getitem__(self, item):
+    def __get_file(self, item, mimetype=None):
+
         keys = [key for key in item.split("/") if key.strip() != ""]
 
         if len(keys) > 1:
@@ -225,15 +226,31 @@ class PyGFolder(object):
             return pygfolder[os.path.join(*keys[1:])], 200, self.__refresh_token
 
         metadata = self.__file_meta(item, self.root_ids[-1])
+
         if metadata['mimeType'] == FOLDER_MIME:
             result = PyGFolder(os.path.join(self.root_folder, item), root_ids=self.root_ids + [metadata['id']], token=self.token, resolve=False)
             status_code = 200
+        elif "application/vnd.google-apps" in metadata['mimeType']:
+
+            if mimetype is None:
+                raise KeyError("The specified file is in Google's format and must be exported in order to be downloaded. The problem is that I cannot infer the MimeType for exporting it automatically. You must use the export() function, specifying the desired MimeType, in order to retrieve its contents.")
+            else:
+                response = self.oauth.get("{}/files/{}/export".format(self.drive_api, metadata['id']), params={'mimeType': mimetype})
+                result = response.content
+                status_code= response.status_code
+
         else:
             response = self.oauth.get("{}/files/{}".format(self.drive_api, metadata['id']), params={'alt': 'media'})
             result = response.content
             status_code = response.status_code
 
         return result, status_code, self.__refresh_token
+
+    def __getitem__(self, item):
+        return self.__get_file(item)
+
+    def export(self, item, mimetype):
+        return self.__get_file(item, mimetype=mimetype)
 
     @retry
     def __make_folder(self, folder_name):
