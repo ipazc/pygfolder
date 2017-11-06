@@ -45,7 +45,7 @@ def retry(func_wrap):
             retry += 1
             result, status_code, retry_func = func_wrap(obj, *args, **kwargs)
 
-            if status_code != 200:
+            if status_code > 299:
                 retry_func()
             else:
                 retrieved = True
@@ -218,6 +218,7 @@ class PyGFolder(object):
 
     @retry
     def __get_file(self, item, mimetype=None):
+        if item.startswith("/"): item = item[1:]
 
         keys = [key for key in item.split("/") if key.strip() != ""]
 
@@ -265,6 +266,7 @@ class PyGFolder(object):
 
     @retry
     def __setitem__(self, key, value):
+        if key.startswith("/"): key = key[1:]
 
         keys = key.split("/")
 
@@ -352,3 +354,23 @@ class PyGFolder(object):
 
     def __repr__(self):
         return "PyGFolder: {}".format(self.root_folder)
+
+    def __delitem__(self, item):
+        if item.startswith("/"): item = item[1:]
+
+        keys = [key for key in item.split("/") if key.strip() != ""]
+
+        if len(keys) > 1:
+            pygfolder = self[keys[0]] # type: PyGFolder
+            del pygfolder[os.path.join(*keys[1:])]
+        else:
+            metadata = self.__file_meta(item, self.root_ids[-1])
+            self.__remove_id(metadata['id'])
+
+    @retry
+    def __remove_id(self, id):
+        response =self.oauth.delete("{}/files/{}".format(self.drive_api, id))
+        status_code = response.status_code
+        result = ""
+
+        return result, status_code, self.__refresh_token
